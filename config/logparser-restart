@@ -1,0 +1,5 @@
+#!/bin/bash
+
+/usr/bin/systemctl restart log-parser.service
+
+##/usr/local/bin/logparser-restart

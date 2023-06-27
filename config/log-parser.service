@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=/root/log_parser
-ExecStart=/usr/bin/python3 /root/log_parser/log_parser.py
+WorkingDirectory=/root/CheckPoint-LogParser
+ExecStart=/usr/bin/python3 /root/CheckPoint-LogParser/log_parser.py
 Restart=always
 
 [Install]
