@@ -113,11 +113,13 @@ def action_IP_list(ip):
     logging.debug(f"action_IP_list_interval_time: {interval_time}")
     logging.debug(f"action_IP_list_LEN: {len(ip_list[ip])}")
 
-    if ip_list[ip][0] < interval_time:
-        for i in range((len(ip_list[ip])-1)):
+    if ip_list[ip] and ip_list[ip][0] < interval_time:
+        i = 0
+        while i < len(ip_list[ip]):
             if ip_list[ip][i] < interval_time:
                 ip_list[ip].pop(i)
-
+            else:
+                i += 1
     # Check if the number of timestamps for the IP exceeds the threshold within the allowed interval
     return len(ip_list[ip]) >= threshold and ip_list[ip][0] >= interval_time
 
@@ -175,7 +177,7 @@ def handle_log(log_data, addr = ''):
     global syslog_server_enable, logfile_path, redis_conn
     if not syslog_server_enable:
         addr = logfile_path
-    logging.debug(f"Received log from {addr}:")
+    logging.debug(f"handle_log from {addr}:")
     try:
         redis_conn.lpush("syslog", log_data.decode('utf-8'))
     except:
@@ -203,6 +205,7 @@ def syslogs_udp_server(stop_event):
 
     while not stop_event.is_set():
         data, addr = server_socket.recvfrom(8192)
+        logging.debug(f"syslogs_udp_server from {addr}:")
         handle_log(data, addr)
 
 def tail_file(stop_event):

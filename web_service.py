@@ -29,7 +29,7 @@ default_ttl = 0
 notify = False
 ifttt_webhook_url = ''
 tcp_config_client = TcpConfigClient(server_ip="127.0.0.1", server_port=8888)
-udp_client = UdpClient()
+#udp_client = UdpClient()
 
 
 def get_config():
@@ -52,6 +52,7 @@ def config_data():
 
 @app.route('/test/syslog', methods=['GET','POST'])
 def syslog_test():
+    udp_client = UdpClient()
     response_text = []
     if request.method == 'POST' and request.is_json:
         data = request.get_json()
@@ -142,7 +143,6 @@ def regex_update():
 @app.route('/networkfeed', methods=['GET'])
 def list_data():
     global redis_conn
-    get_config()
     all_data = TbOutput.query.with_entities(TbOutput.data, TbOutput.ttl, TbOutput.createtime, TbOutput.comment).all()
     try:
         redis_conn.ltrim('syslog', 0, 299)
@@ -188,7 +188,6 @@ def delete_data(ip):
 @app.route('/networkfeed/add/<ip>', methods=['GET'])
 @app.route('/networkfeed/add/<ip>/<int:ttl>', methods=['GET'])
 def add_data(ip, ttl=None):
-    get_config()
     global default_ttl
     app.logger.info(type(ttl))
     app.logger.info(str(default_ttl))
