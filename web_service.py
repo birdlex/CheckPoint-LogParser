@@ -14,7 +14,8 @@ from lib.udp_client import UdpClient
 import logging
 logging.basicConfig(filename='log/web_service.log', encoding='utf-8', level=logging.INFO)
 
-redis_conn_pool = redis.ConnectionPool(host='localhost', port=6379, decode_responses=True)
+redis_host = os.getenv('REDIS_HOST', default='localhost')
+redis_conn_pool = redis.ConnectionPool(host=redis_host, port=6379, decode_responses=True)
 redis_conn = redis.Redis(connection_pool=redis_conn_pool)
 
 app = Flask(__name__)

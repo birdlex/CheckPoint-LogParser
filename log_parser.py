@@ -18,7 +18,8 @@ from flask import current_app
 # from tcp_config_server import TcpConfigServer
 import logging
 
-redis_conn_pool = redis.ConnectionPool(host='localhost', port=6379, decode_responses=True)
+redis_host = os.getenv('REDIS_HOST', default='localhost')
+redis_conn_pool = redis.ConnectionPool(host=redis_host, port=6379, decode_responses=True)
 redis_conn = redis.Redis(connection_pool=redis_conn_pool)
 
 app = Flask(__name__)
@@ -179,24 +180,35 @@ def handle_log(log_data, addr = ''):
         addr = logfile_path
     logging.debug(f"handle_log from {addr}:")
     try:
-        redis_conn.lpush("syslog", log_data.decode('utf-8'))
+        redis_conn.lpush("syslog", log_data.decode('utf-8', errors='ignore'))
     except:
         pass
-    regex_parser(log_data.decode('utf-8'), addr)
 
-# Extract IP addresses from the input text and update the IP list
+    try:
+        regex_parser(log_data.decode('utf-8', errors='ignore'), addr)
+    except IndexError:
+        logging.error(f"Error: 'list index out of range' in regex_parser, log_data: {log_data}, addr: {addr}")
+        raise
+    except Exception as e:
+        logging.error(f"Error: {str(e)} in regex_parser, log_data: {log_data}, addr: {addr}")
+        raise
+
 def regex_parser(txt, addr):
     global RegEx_Data
     logging.debug(f"SYSLOG: {txt}")
     for key, value in RegEx_Data.items():
-        #print(value)
         regex = r'{}'.format(value)
         matches = re.finditer(regex, txt, re.UNICODE | re.MULTILINE)
-        #logging.info(f"REGE_KEY: {key}")
-        # Update the IP list for each matched IP address
         for match in matches:
             logging.debug(f"match_group: {match.group(1)}, match_key: {key}")
-            update_IP_list(match.group(1), addr, key)
+            try:
+                update_IP_list(match.group(1), addr, key)
+            except IndexError:
+                logging.error(f"Error: 'list index out of range' in update_IP_list, match: {match.group(1)}, addr: {addr}, key: {key}")
+                raise
+            except Exception as e:
+                logging.error(f"Error: {str(e)} in update_IP_list, match: {match.group(1)}, addr: {addr}, key: {key}")
+                raise
 
 def syslogs_udp_server(stop_event):
     global syslog_port
@@ -204,9 +216,12 @@ def syslogs_udp_server(stop_event):
     server_socket.bind(('0.0.0.0', syslog_port))
 
     while not stop_event.is_set():
-        data, addr = server_socket.recvfrom(8192)
-        logging.debug(f"syslogs_udp_server from {addr}:")
-        handle_log(data, addr)
+        try:
+            data, addr = server_socket.recvfrom(8192)
+            logging.debug(f"syslogs_udp_server from {addr}:")
+            handle_log(data, addr)
+        except Exception as e:
+            logging.error(f"Error in syslogs_udp_server: {e}")
 
 def tail_file(stop_event):
     if os.path.exists(logfile_path):
