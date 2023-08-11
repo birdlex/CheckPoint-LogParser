@@ -1,6 +1,6 @@
 FROM python:3.11.4-alpine3.18 AS python
 
-RUN apk --no-cache add curl htop sqlite net-tools
+#RUN apk --no-cache add curl htop sqlite net-tools
 RUN mkdir /app
 WORKDIR /app
 
