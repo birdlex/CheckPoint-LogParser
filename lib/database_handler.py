@@ -2,16 +2,17 @@ import os
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 
-
 class DatabaseHandler:
     def __init__(self, app):
-        sqlite_list_db_path = os.path.join(os.path.dirname(__file__), "../db/list.db")
-        sqlite_op_log_db_path = os.path.join(os.path.dirname(__file__), "../db/op_log.db")
-        sqlite_config_db_path = os.path.join(os.path.dirname(__file__), "../db/config.db")
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + sqlite_list_db_path
+        
+        self.sqlite_list_db_path = os.path.join(os.path.dirname(__file__), "../db/list.db")
+        self.sqlite_op_log_db_path = os.path.join(os.path.dirname(__file__), "../db/op_log.db")
+        self.sqlite_config_db_path = os.path.join(os.path.dirname(__file__), "../db/config.db")
+        
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + self.sqlite_list_db_path
         app.config["SQLALCHEMY_BINDS"] = {
-            "config": "sqlite:///" + sqlite_config_db_path,
-            "op_log": "sqlite:///" + sqlite_op_log_db_path,
+            "config": "sqlite:///" + self.sqlite_config_db_path,
+            "op_log": "sqlite:///" + self.sqlite_op_log_db_path,
         }
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         self.db = SQLAlchemy(app)
@@ -51,6 +52,43 @@ class DatabaseHandler:
 
         self.TbConfig = TbConfig
 
+        with app.app_context():
+            self.check_and_create_db()
+            if not self.conut_tb_config():
+                self.init_configs()
+
+    def check_and_create_db(self):
+        if not os.path.exists(self.sqlite_list_db_path):
+            self.db.create_all()
+        if not os.path.exists(self.sqlite_op_log_db_path):
+            self.db.create_all()
+        if not os.path.exists(self.sqlite_config_db_path):
+            self.db.create_all()
+
+    def conut_tb_config(self):    
+        return self.db.session.query(self.TbConfig).count() >= 1
+
+    def init_configs(self):
+        configs = [
+            ("GLOBAL","interval",1),
+            ("GLOBAL","threshold",3),
+            ("GLOBAL","syslog_server",1),
+            ("GLOBAL","default_ttl",0),
+            ("NOTIFICATION","notify",0),
+            ("NOTIFICATION","ifttt_webhook_url","https://maker.ifttt.com/trigger/CheckPointLogParser/with/key/xxxxxxxxxxxxxx"),
+            ("FILE","logfile_path","/var/log/xxx.log"),
+            ("REGEX","Synology-SMB","NT_STATUS_WRONG_PASSWORD.*remote\\ host\\ \\[ipv4:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"),
+            ("REGEX","CheckPoint-Harmony-Detect","action:\"Detect\".*src:\"(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\""),
+            ("REGEX","CheckPoint-Harmony-Prevent","action:\"Prevent\".*src:\"(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\"")
+        ]
+        for cfg in configs:
+            new_config = self.TbConfig(section=cfg[0], k=cfg[1], v=cfg[2])
+            try:
+                self.db.session.add(new_config)
+                self.db.session.commit()
+            except Exception as e:
+                print("Error while writing config:", e)
+                self.db.session.rollback()
 
     def kv_to_dict(self, data):
         result_dict = dict()

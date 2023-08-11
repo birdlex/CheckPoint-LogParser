@@ -1,5 +1,7 @@
 __pycache__
 config
 *.log
+*.db
+*.jpg
 .inited
 Dockerfile
