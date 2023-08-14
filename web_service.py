@@ -42,14 +42,14 @@ def get_config():
     ifttt_webhook_url = config_dict['ifttt_webhook_url']
     tcp_config_client.send_message('config-reload')
 
-@app.route('/settings', methods=['GET','POST'])
-def config_data():
-    get_config()
-    global default_ttl, ifttt_webhook_url, tcp_config_client
-    XXX = ifttt_webhook_url
-    response_text = []
-    response_text.append(f"{XXX}")
-    return '\n'.join(response_text)
+#@app.route('/settings', methods=['GET','POST'])
+#def config_data():
+#    get_config()
+#    global default_ttl, ifttt_webhook_url, tcp_config_client
+#    XXX = ifttt_webhook_url
+#    response_text = []
+#    response_text.append(f"{XXX}")
+#    return '\n'.join(response_text)
 
 @app.route('/test/syslog', methods=['GET','POST'])
 def syslog_test():

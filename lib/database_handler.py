@@ -124,7 +124,8 @@ class DatabaseHandler:
             # self.TbConfig.query.filter_by(section='GLOBAL', k='syslog_server').update(dict(v=str(config_dict['syslog_server'])))
             # self.TbConfig.query.filter_by(section='GLOBAL', k='FILE').update(dict(v=str(config_dict['logfile_path'])))
             self.TbConfig.query.filter_by(section='NOTIFICATION', k='notify').update(dict(v=str(config_dict['notify'])))
-            self.TbConfig.query.filter_by(section='NOTIFICATION', k='ifttt_webhook_url').update(dict(v=str(config_dict['ifttt_webhook_url'])))
+            ifttt_webhook_url_v = str(config_dict['ifttt_webhook_url']).replace('/json', '')
+            self.TbConfig.query.filter_by(section='NOTIFICATION', k='ifttt_webhook_url').update(dict(v=ifttt_webhook_url_v))
             self.db.session.commit()
             return True
         except Exception as e:
