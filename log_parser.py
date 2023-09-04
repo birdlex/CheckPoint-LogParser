@@ -153,7 +153,7 @@ def write_IP_list(ip, ttl, comment_text):
     global sqlite_path
     con = sqlite3.connect(sqlite_path)
     cur = con.cursor()
-    cur.execute("INSERT OR IGNORE INTO tb_output (data, ttl, comment) VALUES (?, ?, ?)", (ip, ttl, comment_text))  # Remove the single quotes around comment_text
+    cur.execute("INSERT OR IGNORE INTO tb_output (data, ttl, createtime, comment) VALUES (?, ?, DateTime('now'), ?)", (ip, ttl, comment_text))  # Remove the single quotes around comment_text
     inserted = cur.rowcount == 1
     con.commit()
     con.close()
